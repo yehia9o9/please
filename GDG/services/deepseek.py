@@ -24,4 +24,6 @@ def get_deepseek_solution(question):
                 return choice["message"]["content"].strip()
     except requests.exceptions.RequestException as e:
         logging.error(f"DeepSeek API request failed: {e}")
+    logging.error(f"Response data: {response_data if 'response_data' in locals() else 'No response data'}")
+
     return None
