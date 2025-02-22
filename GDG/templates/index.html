@@ -3,25 +3,45 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Math Problem Solver</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <title>All in one</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/mathquill/0.10.1/mathquill.min.css">
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/11.7.0/math.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/algebrite@1.4.0/dist/algebrite.min.js"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
-            background-color: #f4f4f9;
+            background-image: url('/static/background.jpg');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
             margin: 0;
             padding: 0;
             display: flex;
             flex-direction: column;
-            align-items: center;
             justify-content: center;
+            align-items: center;
             min-height: 100vh;
         }
 
+        .text-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .text-item {
+            font-size: 40px;
+            font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+            color: #333;
+            text-align: center;
+        }
+
         .container {
-            background: white;
+            background: rgba(255, 255, 255, 0.9);
             padding: 20px;
             border-radius: 8px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
@@ -82,35 +102,89 @@
             background-color: #0056b3;
         }
 
+        .math-keyboard {
+            display: none;
+            margin-top: 10px;
+            background: #f9f9f9;
+            padding: 10px;
+            border-radius: 4px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            position: relative;
+        }
+
+        .math-keyboard-panel {
+            display: block;
+        }
+
+        .math-keyboard-row {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 10px;
+        }
+
+        .math-keyboard button {
+            padding: 10px;
+            background-color: #fff;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 0 5px;
+        }
+
+        .math-keyboard button:hover {
+            background-color: #f1f1f1;
+        }
+
+        .slide-button {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            padding: 10px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        .slide-button:hover {
+            background-color: #0056b3;
+        }
+
         .results-section {
             margin-top: 20px;
         }
 
-        .result-item {
+        h3 {
+            color: #555;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 5px;
+        }
+
+        .ai-results {
+            background: rgba(233, 245, 255, 0.9);
+            padding: 15px;
+            border-radius: 4px;
             margin-bottom: 20px;
         }
 
-        .final-answer {
-            font-weight: bold;
-            margin-bottom: 10px;
-        }
-
-        .steps {
-            margin-top: 10px;
-            padding: 10px;
-            background-color: #f9f9f9;
-            border: 1px solid #ddd;
+        .learning-results .result-item {
+            background: rgba(249, 249, 249, 0.9);
+            padding: 15px;
             border-radius: 4px;
-            display: none;
-        }
-
-        .steps ol {
-            margin: 0;
-            padding-left: 20px;
-        }
-
-        .steps ol li {
             margin-bottom: 10px;
+        }
+
+        .learning-results .result-item a {
+            color: #007bff;
+            text-decoration: none;
+        }
+
+        .learning-results .result-item a:hover {
+            text-decoration: underline;
         }
 
         .loading-spinner {
@@ -119,34 +193,75 @@
             margin-top: 20px;
         }
 
-        .loading-spinner i {
-            font-size: 50px;
-            color: #007bff;
+        .loading-spinner img {
+            width: 50px;
+            height: 50px;
         }
 
-        .spin {
-            animation: spin 1s linear infinite;
+        .dark-mode {
+            background-color: #121212;
+            color: #ffffff;
         }
 
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+        .dark-mode .container {
+            background-color: #1e1e1e;
+            color: #ffffff;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Math Problem Solver</h1>
+        <h1>All in one</h1>
         <form action="/search" method="GET" onsubmit="showLoading()">
             <div class="search-bar">
                 <span id="math-input"></span>
+                <input type="hidden" id="math-field" />
                 <input type="hidden" name="query" id="math-query">
                 <button type="button" id="math-keyboard-button" onclick="toggleMathKeyboard()">∑</button>
                 <button type="submit" id="search-button">Search</button>
             </div>
         </form>
 
-        <div id="loading" class="loading-spinner">
+        <div id="math-keyboard" class="math-keyboard">
+            <div class="math-keyboard-row">
+                <button onclick="mathField.cmd('\\sqrt')">√</button>
+                <button onclick="mathField.cmd('\\frac')">a/b</button>
+                <button onclick="mathField.write('^')">^</button>
+                <button onclick="mathField.write('\\pi')">π</button>
+                <button onclick="mathField.write('\\infty')">∞</button>
+            </div>
+            <div class="math-keyboard-row">
+                <button onclick="mathField.write('+')">+</button>
+                <button onclick="mathField.write('-')">-</button>
+                <button onclick="mathField.write('\\times')">×</button>
+                <button onclick="mathField.write('\\div')">÷</button>
+                <button onclick="mathField.write('=')">=</button>
+            </div>
+            <div class="math-keyboard-row">
+                <button onclick="mathField.write('(')">(</button>
+                <button onclick="mathField.write(')')">)</button>
+                <button onclick="mathField.write('[')">[</button>
+                <button onclick="mathField.write(']')">]</button>
+                <button onclick="mathField.write('\\{')">{</button>
+                <button onclick="mathField.write('\\}')">}</button>
+            </div>
+            <div class="math-keyboard-row">
+                <button onclick="mathField.write('\\sin')">sin</button>
+                <button onclick="mathField.write('\\cos')">cos</button>
+                <button onclick="mathField.write('\\tan')">tan</button>
+                <button onclick="mathField.write('\\log')">log</button>
+                <button onclick="mathField.write('\\ln')">ln</button>
+            </div>
+            <div class="math-keyboard-row">
+                <button onclick="mathField.cmd('\\int')">∫</button>
+                <button onclick="mathField.cmd('\\sum')">∑</button>
+                <button onclick="mathField.write('\\partial')">∂</button>
+                <button onclick="mathField.write('e')">e</button>
+                <button onclick="mathField.write('\\int f(x) dx')">∫f(x)dx</button>
+            </div>
+        </div>
+
+        <div id="loading" class="loading-spinner" style="display: none;">
             <i class="fas fa-spinner fa-spin"></i>
         </div>
 
@@ -177,38 +292,50 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mathquill/0.10.1/mathquill.min.js"></script>
     <script>
-        // Initialize MathQuill
-        const mathField = MathQuill.getInterface(2).MathField(document.getElementById('math-input'), {
+        const mathField = MQ.MathField(document.getElementById('math-input'), {
             handlers: {
                 edit: function () {
-                    // Update the hidden input with the LaTeX value
                     document.getElementById('math-query').value = mathField.latex();
+                    document.getElementById('math-field').value = mathField.latex();
+                    updateGraph();
                 }
             }
         });
 
-        // Toggle Math Keyboard Visibility
-        function toggleMathKeyboard() {
-            const mathKeyboard = document.getElementById('math-keyboard');
-            mathKeyboard.style.display = mathKeyboard.style.display === 'none' ? 'block' : 'none';
-        }
+        
 
-        // Show Loading Spinner
-        function showLoading() {
-            document.getElementById('loading').style.display = 'block';
-        }
+        function updateGraph() {
+            const latex = mathField.latex();
+            const expression = convertLatexToMathJS(latex);
 
-        // Toggle Steps Visibility
-        function toggleSteps(id) {
-            const stepsDiv = document.getElementById(id);
-            const button = stepsDiv.previousElementSibling;
-            if (stepsDiv.style.display === "none") {
-                stepsDiv.style.display = "block";
-                button.textContent = "Hide Steps";
-            } else {
-                stepsDiv.style.display = "none";
-                button.textContent = "Show Steps";
-            }
+            fetch('/generate_graph?expression=' + encodeURIComponent(expression))
+                .then(response => response.json())
+                .then(data => {
+                    const xValues = data.xValues;
+                    const yValues = data.yValues;
+
+                    const trace = {
+                        x: xValues,
+                        y: yValues,
+                        type: 'scatter',
+                        mode: 'lines',
+                        name: 'f(x)'
+                    };
+
+                    const layout = {
+                        title: 'Graph of ' + latex,
+                        xaxis: { title: 'x' },
+                        yaxis: { title: 'f(x)' },
+                        dragmode: 'zoom',
+                        hovermode: 'closest',
+                        showlegend: true
+                    };
+
+                    Plotly.newPlot('graph', [trace], layout);
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
         }
     </script>
 </body>
