@@ -3,11 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>All in one</title>
+    <title>All in One</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/mathquill/0.10.1/mathquill.min.css">
-    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/11.7.0/math.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/algebrite@1.4.0/dist/algebrite.min.js"></script>
     <style>
@@ -24,20 +25,6 @@
             justify-content: center;
             align-items: center;
             min-height: 100vh;
-        }
-
-        .text-container {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .text-item {
-            font-size: 40px;
-            font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
-            color: #333;
-            text-align: center;
         }
 
         .container {
@@ -171,20 +158,31 @@
             margin-bottom: 20px;
         }
 
-        .learning-results .result-item {
-            background: rgba(249, 249, 249, 0.9);
-            padding: 15px;
-            border-radius: 4px;
+        .result-item {
+            margin-bottom: 20px;
+        }
+
+        .final-answer {
+            font-weight: bold;
             margin-bottom: 10px;
         }
 
-        .learning-results .result-item a {
-            color: #007bff;
-            text-decoration: none;
+        .steps {
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            display: none;
         }
 
-        .learning-results .result-item a:hover {
-            text-decoration: underline;
+        .steps ol {
+            margin: 0;
+            padding-left: 20px;
+        }
+
+        .steps ol li {
+            margin-bottom: 10px;
         }
 
         .loading-spinner {
@@ -193,29 +191,34 @@
             margin-top: 20px;
         }
 
-        .loading-spinner img {
-            width: 50px;
-            height: 50px;
+        .loading-spinner i {
+            font-size: 50px;
+            color: #007bff;
         }
 
-        .dark-mode {
-            background-color: #121212;
-            color: #ffffff;
+        .spin {
+            animation: spin 1s linear infinite;
         }
 
-        .dark-mode .container {
-            background-color: #1e1e1e;
-            color: #ffffff;
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        #graph {
+            width: 100%;
+            height: 500px;
+            margin-top: 20px;
+            border: 1px solid #ccc;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>All in one</h1>
-        <form action="/search" method="GET" onsubmit="showLoading()">
+        <h1>All in One</h1>
+        <form action="/search" method="GET" onsubmit="showLoading(); generateGraph(); return false;">
             <div class="search-bar">
                 <span id="math-input"></span>
-                <input type="hidden" id="math-field" />
                 <input type="hidden" name="query" id="math-query">
                 <button type="button" id="math-keyboard-button" onclick="toggleMathKeyboard()">∑</button>
                 <button type="submit" id="search-button">Search</button>
@@ -261,82 +264,88 @@
             </div>
         </div>
 
-        <div id="loading" class="loading-spinner" style="display: none;">
+        <div id="loading" class="loading-spinner">
             <i class="fas fa-spinner fa-spin"></i>
         </div>
 
         {% if query %}
         <h2>Results for: {{ query }}</h2>
         <div class="results-section">
-            <h3>AI-Based Results</h3>
-            <div class="ai-results">
-                {% for solution, source in solutions %}
-                <div class="result-item">
-                    <h4>Solution from {{ source }}:</h4>
-                    <p class="final-answer">{{ solution | extract_final_answer | safe }}</p>
-                    <button onclick="toggleSteps('{{ source|lower|replace(' ', '-') }}-steps')">Show Steps</button>
-                    <div id="{{ source|lower|replace(' ', '-') }}-steps" class="steps">
-                        <ol>
-                            {% for step in solution | extract_steps | split_steps %}
-                            <li>{{ step | safe }}</li>
-                            {% endfor %}
-                        </ol>
-                    </div>
+            {% if best_answer %}
+            <div class="result-item">
+                <h4>🥇 Best Answer (Selected by Gemini):</h4>
+                <div class="best-answer">
+                    {{ best_answer | replace("3. ", "") | safe }}
                 </div>
-                {% endfor %}
+            </div>
+            {% endif %}
+
+            <h3>All Solutions:</h3>
+            <div class="ai-results">
+                {% if all_answers %}
+                    {% for solution, source in all_answers %}
+                    <div class="result-item">
+                        <h4>Solution from {{ source }}:</h4>
+                        <p class="final-answer">{{ solution | extract_final_answer | safe }}</p>
+                        <button onclick="toggleSteps('{{ source|lower|replace(' ', '-') }}-steps')">Show Steps</button>
+                        <div id="{{ source|lower|replace(' ', '-') }}-steps" class="steps">
+                            <ol>
+                                {% for step in solution | extract_steps | split_steps %}
+                                <li>{{ step | safe }}</li>
+                                {% endfor %}
+                            </ol>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <p>No solutions found.</p>
+                {% endif %}
             </div>
         </div>
+
+
+
         {% endif %}
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mathquill/0.10.1/mathquill.min.js"></script>
     <script>
-        const mathField = MQ.MathField(document.getElementById('math-input'), {
+        const mathField = MathQuill.getInterface(2).MathField(document.getElementById('math-input'), {
             handlers: {
                 edit: function () {
                     document.getElementById('math-query').value = mathField.latex();
-                    document.getElementById('math-field').value = mathField.latex();
-                    updateGraph();
                 }
             }
         });
 
-        
-
-        function updateGraph() {
-            const latex = mathField.latex();
-            const expression = convertLatexToMathJS(latex);
-
-            fetch('/generate_graph?expression=' + encodeURIComponent(expression))
-                .then(response => response.json())
-                .then(data => {
-                    const xValues = data.xValues;
-                    const yValues = data.yValues;
-
-                    const trace = {
-                        x: xValues,
-                        y: yValues,
-                        type: 'scatter',
-                        mode: 'lines',
-                        name: 'f(x)'
-                    };
-
-                    const layout = {
-                        title: 'Graph of ' + latex,
-                        xaxis: { title: 'x' },
-                        yaxis: { title: 'f(x)' },
-                        dragmode: 'zoom',
-                        hovermode: 'closest',
-                        showlegend: true
-                    };
-
-                    Plotly.newPlot('graph', [trace], layout);
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                });
+        function toggleMathKeyboard() {
+            const mathKeyboard = document.getElementById('math-keyboard');
+            mathKeyboard.style.display = mathKeyboard.style.display === 'none' ? 'block' : 'none';
         }
+
+        function showLoading() {
+            document.getElementById('loading').style.display = 'block';
+        }
+
+        function hideLoading() {
+            document.getElementById('loading').style.display = 'none';
+        }
+
+        function toggleSteps(id) {
+            const stepsDiv = document.getElementById(id);
+            const button = stepsDiv.previousElementSibling;
+            if (stepsDiv.style.display === "none") {
+                stepsDiv.style.display = "block";
+                button.textContent = "Hide Steps";
+            } else {
+                stepsDiv.style.display = "none";
+                button.textContent = "Show Steps";
+            }
+        }
+
+
+
     </script>
 </body>
 </html>
