@@ -30,7 +30,6 @@ def evaluate_answers_with_gemini(question, answers):
         genai.configure(api_key=Config.GOOGLE_API_KEY)
         model = genai.GenerativeModel("gemini-pro")
 
-        # Prepare the prompt for Gemini
         prompt = (
             f"Evaluate the following answers to the math problem and select the best one (excluding your own answer). "
             f"Explain why you chose it.\n\n"
@@ -40,10 +39,8 @@ def evaluate_answers_with_gemini(question, answers):
         for i, answer in enumerate(answers):
             prompt += f"{i + 1}. {answer}\n\n"
 
-        # Log the prompt being sent to Gemini
         logging.debug(f"Sending prompt to Gemini: {prompt}")
 
-        # Send the prompt to Gemini
         response = model.generate_content(prompt)
         if response.text:
             logging.debug(f"Gemini response: {response.text.strip()}")
